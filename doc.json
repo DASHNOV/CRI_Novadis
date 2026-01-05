@@ -1,0 +1,1127 @@
+{
+  "project": {
+    "name": "Novadis CRI - Application de Compte Rendu d'Intervention",
+    "version": "1.0.0 MVP",
+    "description": "Application mobile pour créer et gérer des comptes rendus d'intervention (CRI) pour projets et services",
+    "client": "Novadis",
+    "colors": {
+      "primary": "#0066CC",
+      "secondary": "#004C99",
+      "success": "#28A745",
+      "warning": "#FFC107",
+      "error": "#DC3545"
+    }
+  },
+  
+  "objectives": {
+    "main": "Développer une application mobile permettant de créer rapidement des CRI sur le terrain",
+    "specific": [
+      "Créer 2 types de CRI : Projet et Service",
+      "Collecter toutes les informations nécessaires via formulaires",
+      "Générer automatiquement un PDF professionnel",
+      "Fonctionner hors ligne (stockage local)",
+      "Interface intuitive pour techniciens terrain"
+    ]
+  },
+
+  "technical_stack": {
+    "framework": "React Native avec Expo",
+    "language": "JavaScript/TypeScript",
+    "navigation": "React Navigation 6.x",
+    "storage": "AsyncStorage (@react-native-async-storage/async-storage)",
+    "pdf_generation": "react-native-html-to-pdf",
+    "forms": "React Hook Form + Yup validation",
+    "ui_components": "React Native Paper",
+    "date_picker": "@react-native-community/datetimepicker",
+    "icons": "@expo/vector-icons",
+    "state_management": "React Context API ou Redux Toolkit"
+  },
+
+  "project_structure": {
+    "root": "/novadis-cri",
+    "folders": {
+      "src": {
+        "screens": [
+          "HomeScreen.js - Écran d'accueil avec choix du type de CRI",
+          "CRIProjetScreen.js - Formulaire CRI Projet",
+          "CRIServiceScreen.js - Formulaire CRI Service",
+          "HistoryScreen.js - Liste des CRI sauvegardés"
+        ],
+        "components": [
+          "FormInput.js - Input texte réutilisable",
+          "FormSelect.js - Sélecteur déroulant",
+          "FormCheckbox.js - Case à cocher",
+          "FormTextArea.js - Zone de texte multiligne",
+          "PhotoPicker.js - Sélection et affichage de photos",
+          "SignaturePad.js - Zone de signature",
+          "PDFPreview.js - Aperçu du PDF généré"
+        ],
+        "utils": [
+          "pdfGenerator.js - Génération des PDF",
+          "storage.js - Gestion AsyncStorage",
+          "validation.js - Schémas de validation Yup",
+          "constants.js - Constantes (couleurs, listes)",
+          "helpers.js - Fonctions utilitaires"
+        ],
+        "context": [
+          "CRIContext.js - Context global pour les CRI"
+        ],
+        "navigation": [
+          "AppNavigator.js - Configuration navigation"
+        ],
+        "assets": [
+          "images/ - Logo Novadis, icônes",
+          "fonts/ - Polices personnalisées"
+        ]
+      }
+    }
+  },
+
+  "cri_types": {
+    "cri_projet": {
+      "description": "Compte rendu pour interventions liées à un projet spécifique",
+      "sections": {
+        "informations_generales": {
+          "fields": [
+            {
+              "name": "numero_cri",
+              "label": "Numéro CRI",
+              "type": "text",
+              "required": true,
+              "auto_generated": true,
+              "format": "CRI-PROJ-YYYYMMDD-XXX"
+            },
+            {
+              "name": "date_intervention",
+              "label": "Date d'intervention",
+              "type": "date",
+              "required": true,
+              "default": "today"
+            },
+            {
+              "name": "heure_debut",
+              "label": "Heure de début",
+              "type": "time",
+              "required": true
+            },
+            {
+              "name": "heure_fin",
+              "label": "Heure de fin",
+              "type": "time",
+              "required": true
+            }
+          ]
+        },
+        "informations_client": {
+          "fields": [
+            {
+              "name": "nom_client",
+              "label": "Nom du client",
+              "type": "text",
+              "required": true,
+              "placeholder": "Ex: Entreprise ABC"
+            },
+            {
+              "name": "site",
+              "label": "Site",
+              "type": "text",
+              "required": true,
+              "placeholder": "Ex: Siège social Paris"
+            },
+            {
+              "name": "adresse",
+              "label": "Adresse",
+              "type": "textarea",
+              "required": true,
+              "rows": 3
+            },
+            {
+              "name": "contact_client",
+              "label": "Contact client",
+              "type": "text",
+              "required": true,
+              "placeholder": "Nom et prénom"
+            },
+            {
+              "name": "telephone_contact",
+              "label": "Téléphone",
+              "type": "tel",
+              "required": false,
+              "format": "XX XX XX XX XX"
+            },
+            {
+              "name": "email_contact",
+              "label": "Email",
+              "type": "email",
+              "required": false,
+              "validation": "email_format"
+            }
+          ]
+        },
+        "informations_projet": {
+          "fields": [
+            {
+              "name": "nom_projet",
+              "label": "Nom du projet",
+              "type": "text",
+              "required": true,
+              "placeholder": "Ex: Migration serveurs"
+            },
+            {
+              "name": "numero_projet",
+              "label": "Numéro de projet",
+              "type": "text",
+              "required": false,
+              "placeholder": "Ex: PRJ-2024-001"
+            },
+            {
+              "name": "phase_projet",
+              "label": "Phase du projet",
+              "type": "select",
+              "required": true,
+              "options": [
+                "Étude",
+                "Installation",
+                "Configuration",
+                "Tests",
+                "Mise en production",
+                "Clôture"
+              ]
+            }
+          ]
+        },
+        "intervention": {
+          "fields": [
+            {
+              "name": "type_intervention",
+              "label": "Type d'intervention",
+              "type": "select",
+              "required": true,
+              "options": [
+                "Installation matériel",
+                "Configuration",
+                "Mise à jour",
+                "Formation",
+                "Audit",
+                "Autre"
+              ]
+            },
+            {
+              "name": "description_travaux",
+              "label": "Description des travaux réalisés",
+              "type": "textarea",
+              "required": true,
+              "rows": 6,
+              "placeholder": "Décrivez en détail les actions effectuées..."
+            },
+            {
+              "name": "materiels_utilises",
+              "label": "Matériels utilisés",
+              "type": "textarea",
+              "required": false,
+              "rows": 4,
+              "placeholder": "Liste du matériel installé ou utilisé"
+            },
+            {
+              "name": "problemes_rencontres",
+              "label": "Problèmes rencontrés",
+              "type": "textarea",
+              "required": false,
+              "rows": 4,
+              "placeholder": "Décrivez les difficultés éventuelles..."
+            },
+            {
+              "name": "solutions_apportees",
+              "label": "Solutions apportées",
+              "type": "textarea",
+              "required": false,
+              "rows": 4,
+              "placeholder": "Comment les problèmes ont été résolus..."
+            }
+          ]
+        },
+        "suivi": {
+          "fields": [
+            {
+              "name": "actions_a_realiser",
+              "label": "Actions restant à réaliser",
+              "type": "textarea",
+              "required": false,
+              "rows": 4,
+              "placeholder": "Tâches à planifier..."
+            },
+            {
+              "name": "prochaine_intervention",
+              "label": "Prochaine intervention prévue",
+              "type": "date",
+              "required": false
+            },
+            {
+              "name": "statut_projet",
+              "label": "Statut du projet",
+              "type": "select",
+              "required": true,
+              "options": [
+                "En cours",
+                "En attente validation",
+                "Terminé",
+                "Suspendu"
+              ]
+            }
+          ]
+        },
+        "validation": {
+          "fields": [
+            {
+              "name": "photos",
+              "label": "Photos de l'intervention",
+              "type": "photo_picker",
+              "required": false,
+              "max_photos": 5,
+              "accept": "image/*"
+            },
+            {
+              "name": "signature_technicien",
+              "label": "Signature du technicien",
+              "type": "signature",
+              "required": true
+            },
+            {
+              "name": "nom_technicien",
+              "label": "Nom du technicien",
+              "type": "text",
+              "required": true,
+              "placeholder": "Prénom NOM"
+            },
+            {
+              "name": "signature_client",
+              "label": "Signature du client",
+              "type": "signature",
+              "required": false
+            },
+            {
+              "name": "commentaires_client",
+              "label": "Commentaires du client",
+              "type": "textarea",
+              "required": false,
+              "rows": 3
+            }
+          ]
+        }
+      }
+    },
+    
+    "cri_service": {
+      "description": "Compte rendu pour interventions de maintenance ou support",
+      "sections": {
+        "informations_generales": {
+          "fields": [
+            {
+              "name": "numero_cri",
+              "label": "Numéro CRI",
+              "type": "text",
+              "required": true,
+              "auto_generated": true,
+              "format": "CRI-SERV-YYYYMMDD-XXX"
+            },
+            {
+              "name": "date_intervention",
+              "label": "Date d'intervention",
+              "type": "date",
+              "required": true,
+              "default": "today"
+            },
+            {
+              "name": "heure_debut",
+              "label": "Heure de début",
+              "type": "time",
+              "required": true
+            },
+            {
+              "name": "heure_fin",
+              "label": "Heure de fin",
+              "type": "time",
+              "required": true
+            },
+            {
+              "name": "numero_ticket",
+              "label": "Numéro de ticket",
+              "type": "text",
+              "required": false,
+              "placeholder": "Ex: TICK-2024-12345"
+            }
+          ]
+        },
+        "informations_client": {
+          "fields": [
+            {
+              "name": "nom_client",
+              "label": "Nom du client",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "site",
+              "label": "Site",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "adresse",
+              "label": "Adresse",
+              "type": "textarea",
+              "required": true,
+              "rows": 3
+            },
+            {
+              "name": "contact_client",
+              "label": "Contact client",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "telephone_contact",
+              "label": "Téléphone",
+              "type": "tel",
+              "required": false
+            }
+          ]
+        },
+        "demande": {
+          "fields": [
+            {
+              "name": "type_demande",
+              "label": "Type de demande",
+              "type": "select",
+              "required": true,
+              "options": [
+                "Maintenance préventive",
+                "Maintenance corrective",
+                "Dépannage",
+                "Support technique",
+                "Assistance utilisateur",
+                "Autre"
+              ]
+            },
+            {
+              "name": "priorite",
+              "label": "Priorité",
+              "type": "select",
+              "required": true,
+              "options": [
+                "Basse",
+                "Normale",
+                "Haute",
+                "Critique"
+              ]
+            },
+            {
+              "name": "description_demande",
+              "label": "Description de la demande",
+              "type": "textarea",
+              "required": true,
+              "rows": 4,
+              "placeholder": "Décrivez le problème ou la demande initiale..."
+            }
+          ]
+        },
+        "diagnostic": {
+          "fields": [
+            {
+              "name": "diagnostic_realise",
+              "label": "Diagnostic réalisé",
+              "type": "textarea",
+              "required": true,
+              "rows": 5,
+              "placeholder": "Analyse du problème, tests effectués..."
+            },
+            {
+              "name": "cause_identifiee",
+              "label": "Cause identifiée",
+              "type": "textarea",
+              "required": false,
+              "rows": 3,
+              "placeholder": "Origine du problème..."
+            }
+          ]
+        },
+        "intervention": {
+          "fields": [
+            {
+              "name": "actions_effectuees",
+              "label": "Actions effectuées",
+              "type": "textarea",
+              "required": true,
+              "rows": 6,
+              "placeholder": "Détaillez les actions de résolution..."
+            },
+            {
+              "name": "pieces_remplacees",
+              "label": "Pièces/Composants remplacés",
+              "type": "textarea",
+              "required": false,
+              "rows": 3,
+              "placeholder": "Liste des pièces changées avec références..."
+            },
+            {
+              "name": "temps_intervention",
+              "label": "Temps d'intervention (heures)",
+              "type": "number",
+              "required": true,
+              "min": 0,
+              "step": 0.5,
+              "auto_calculated": true
+            }
+          ]
+        },
+        "resultat": {
+          "fields": [
+            {
+              "name": "statut_resolution",
+              "label": "Statut de résolution",
+              "type": "select",
+              "required": true,
+              "options": [
+                "Résolu",
+                "Partiellement résolu",
+                "Non résolu",
+                "En attente pièces",
+                "Escaladé niveau 2"
+              ]
+            },
+            {
+              "name": "tests_effectues",
+              "label": "Tests effectués",
+              "type": "textarea",
+              "required": false,
+              "rows": 3,
+              "placeholder": "Décrivez les tests de validation..."
+            },
+            {
+              "name": "recommandations",
+              "label": "Recommandations",
+              "type": "textarea",
+              "required": false,
+              "rows": 4,
+              "placeholder": "Conseils, préconisations pour éviter le problème..."
+            }
+          ]
+        },
+        "suivi": {
+          "fields": [
+            {
+              "name": "intervention_supplementaire",
+              "label": "Intervention supplémentaire nécessaire",
+              "type": "checkbox",
+              "required": false
+            },
+            {
+              "name": "date_suivi",
+              "label": "Date de suivi prévue",
+              "type": "date",
+              "required": false,
+              "conditional": "intervention_supplementaire === true"
+            },
+            {
+              "name": "commentaires_suivi",
+              "label": "Commentaires de suivi",
+              "type": "textarea",
+              "required": false,
+              "rows": 3
+            }
+          ]
+        },
+        "validation": {
+          "fields": [
+            {
+              "name": "photos",
+              "label": "Photos de l'intervention",
+              "type": "photo_picker",
+              "required": false,
+              "max_photos": 5
+            },
+            {
+              "name": "signature_technicien",
+              "label": "Signature du technicien",
+              "type": "signature",
+              "required": true
+            },
+            {
+              "name": "nom_technicien",
+              "label": "Nom du technicien",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "signature_client",
+              "label": "Signature du client",
+              "type": "signature",
+              "required": false
+            },
+            {
+              "name": "satisfaction_client",
+              "label": "Satisfaction client",
+              "type": "select",
+              "required": false,
+              "options": [
+                "Très satisfait",
+                "Satisfait",
+                "Neutre",
+                "Insatisfait",
+                "Très insatisfait"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  "data_models": {
+    "cri_projet_schema": {
+      "id": "string (UUID)",
+      "type": "projet",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "numero_cri": "string",
+      "date_intervention": "date",
+      "heure_debut": "time",
+      "heure_fin": "time",
+      "nom_client": "string",
+      "site": "string",
+      "adresse": "string",
+      "contact_client": "string",
+      "telephone_contact": "string",
+      "email_contact": "string",
+      "nom_projet": "string",
+      "numero_projet": "string",
+      "phase_projet": "string",
+      "type_intervention": "string",
+      "description_travaux": "string",
+      "materiels_utilises": "string",
+      "problemes_rencontres": "string",
+      "solutions_apportees": "string",
+      "actions_a_realiser": "string",
+      "prochaine_intervention": "date",
+      "statut_projet": "string",
+      "photos": "array[{uri, name, size}]",
+      "signature_technicien": "base64",
+      "nom_technicien": "string",
+      "signature_client": "base64",
+      "commentaires_client": "string",
+      "pdf_path": "string"
+    },
+    "cri_service_schema": {
+      "id": "string (UUID)",
+      "type": "service",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "numero_cri": "string",
+      "date_intervention": "date",
+      "heure_debut": "time",
+      "heure_fin": "time",
+      "numero_ticket": "string",
+      "nom_client": "string",
+      "site": "string",
+      "adresse": "string",
+      "contact_client": "string",
+      "telephone_contact": "string",
+      "type_demande": "string",
+      "priorite": "string",
+      "description_demande": "string",
+      "diagnostic_realise": "string",
+      "cause_identifiee": "string",
+      "actions_effectuees": "string",
+      "pieces_remplacees": "string",
+      "temps_intervention": "number",
+      "statut_resolution": "string",
+      "tests_effectues": "string",
+      "recommandations": "string",
+      "intervention_supplementaire": "boolean",
+      "date_suivi": "date",
+      "commentaires_suivi": "string",
+      "photos": "array[{uri, name, size}]",
+      "signature_technicien": "base64",
+      "nom_technicien": "string",
+      "signature_client": "base64",
+      "satisfaction_client": "string",
+      "pdf_path": "string"
+    }
+  },
+
+  "validation_rules": {
+    "required_fields": {
+      "cri_projet": [
+        "date_intervention",
+        "heure_debut",
+        "heure_fin",
+        "nom_client",
+        "site",
+        "adresse",
+        "contact_client",
+        "nom_projet",
+        "phase_projet",
+        "type_intervention",
+        "description_travaux",
+        "statut_projet",
+        "signature_technicien",
+        "nom_technicien"
+      ],
+      "cri_service": [
+        "date_intervention",
+        "heure_debut",
+        "heure_fin",
+        "nom_client",
+        "site",
+        "adresse",
+        "contact_client",
+        "type_demande",
+        "priorite",
+        "description_demande",
+        "diagnostic_realise",
+        "actions_effectuees",
+        "temps_intervention",
+        "statut_resolution",
+        "signature_technicien",
+        "nom_technicien"
+      ]
+    },
+    "validation_formats": {
+      "email": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      "telephone": "^[0-9]{10}$",
+      "numero_cri": "^CRI-(PROJ|SERV)-\\d{8}-\\d{3}$",
+      "heure": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+    }
+  },
+
+  "components": {
+    "FormInput": {
+      "description": "Composant input texte réutilisable",
+      "props": {
+        "label": "string - Label du champ",
+        "value": "string - Valeur du champ",
+        "onChangeText": "function - Callback de modification",
+        "placeholder": "string - Texte placeholder",
+        "required": "boolean - Champ obligatoire",
+        "error": "string - Message d'erreur",
+        "keyboardType": "string - Type de clavier",
+        "multiline": "boolean - Zone multiligne",
+        "numberOfLines": "number - Nombre de lignes si multiline"
+      },
+      "example_code": "const FormInput = ({ label, value, onChangeText, placeholder, required, error, keyboardType = 'default', multiline = false, numberOfLines = 1 }) => {\n  return (\n    <View style={styles.inputContainer}>\n      <Text style={styles.label}>\n        {label}\n        {required && <Text style={styles.required}> *</Text>}\n      </Text>\n      <TextInput\n        style={[styles.input, error && styles.inputError, multiline && styles.textarea]}\n        value={value}\n        onChangeText={onChangeText}\n        placeholder={placeholder}\n        keyboardType={keyboardType}\n        multiline={multiline}\n        numberOfLines={numberOfLines}\n      />\n      {error && <Text style={styles.errorText}>{error}</Text>}\n    </View>\n  );\n};"
+    },
+    "FormSelect": {
+      "description": "Composant sélecteur avec Picker",
+      "props": {
+        "label": "string",
+        "value": "string",
+        "onValueChange": "function",
+        "options": "array[string]",
+        "required": "boolean",
+        "error": "string"
+      },
+      "example_code": "import { Picker } from '@react-native-picker/picker';\n\nconst FormSelect = ({ label, value, onValueChange, options, required, error }) => {\n  return (\n    <View style={styles.inputContainer}>\n      <Text style={styles.label}>\n        {label}\n        {required && <Text style={styles.required}> *</Text>}\n      </Text>\n      <View style={[styles.pickerContainer, error && styles.inputError]}>\n        <Picker\n          selectedValue={value}\n          onValueChange={onValueChange}\n          style={styles.picker}\n        >\n          <Picker.Item label=\"Sélectionner...\" value=\"\" />\n          {options.map((option, index) => (\n            <Picker.Item key={index} label={option} value={option} />\n          ))}\n        </Picker>\n      </View>\n      {error && <Text style={styles.errorText}>{error}</Text>}\n    </View>\n  );\n};"
+    },
+    "PhotoPicker": {
+      "description": "Composant de sélection de photos",
+      "props": {
+        "photos": "array",
+        "onPhotosChange": "function",
+        "maxPhotos": "number"
+      },
+      "example_code": "import * as ImagePicker from 'expo-image-picker';\n\nconst PhotoPicker = ({ photos, onPhotosChange, maxPhotos = 5 }) => {\n  const pickImage = async () => {\n    if (photos.length >= maxPhotos) {\n      Alert.alert('Limite atteinte', `Vous ne pouvez ajouter que ${maxPhotos} photos.`);\n      return;\n    }\n\n    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();\n    if (status !== 'granted') {\n      Alert.alert('Permission refusée', 'Accès à la galerie nécessaire.');\n      return;\n    }\n\n    const result = await ImagePicker.launchImageLibraryAsync({\n      mediaTypes: ImagePicker.MediaTypeOptions.Images,\n      allowsEditing: true,\n      quality: 0.8,\n    });\n\n    if (!result.canceled) {\n      onPhotosChange([...photos, result.assets[0]]);\n    }\n  };\n\n  const removePhoto = (index) => {\n    const newPhotos = photos.filter((_, i) => i !== index);\n    onPhotosChange(newPhotos);\n  };\n\n  return (\n    <View style={styles.photoContainer}>\n      <Text style={styles.label}>Photos ({photos.length}/{maxPhotos})</Text>\n      <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n        {photos.map((photo, index) => (\n          <View key={index} style={styles.photoWrapper}>\n            <Image source={{ uri: photo.uri }} style={styles.photo} />\n            <TouchableOpacity\n              style={styles.removeButton}\n              onPress={() => removePhoto(index)}\n            >\n              <Text style={styles.removeText}>✕</Text>\n            </TouchableOpacity>\n          </View>\n        ))}\n        {photos.length < maxPhotos && (\n          <TouchableOpacity style={styles.addPhotoButton} onPress={pickImage}>\n            <Text style={styles.addPhotoText}>+ Ajouter</Text>\n          </TouchableOpacity>\n        )}\n      </ScrollView>\n    </View>\n  );\n};"
+    },
+    "SignaturePad": {
+      "description": "Composant pour capturer une signature",
+      "props": {
+        "signature": "base64 string",
+        "onSignatureChange": "function",
+        "label": "string"
+      },
+      "example_code": "import Signature from 'react-native-signature-canvas';\n\nconst SignaturePad = ({ signature, onSignatureChange, label }) => {\n  const [showPad, setShowPad] = useState(false);\n\n  const handleSignature = (sig) => {\n    onSignatureChange(sig);\n    setShowPad(false);\n  };\n\n  const handleClear = () => {\n    onSignatureChange(null);\n  };\n\n  return (\n    <View style={styles.signatureContainer}>\n      <Text style={styles.label}>{label}</Text>\n      {signature ? (\n        <View>\n          <Image\n            source={{ uri: signature }}\n            style={styles.signatureImage}\n            resizeMode=\"contain\"\n          />\n          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>\n            <Text style={styles.clearButtonText}>Effacer</Text>\n          </TouchableOpacity>\n        </View>\n      ) : (\n        <TouchableOpacity\n          style={styles.signatureButton}\n          onPress={() => setShowPad(true)}\n        >\n          <Text style={styles.signatureButtonText}>Signer</Text>\n        </TouchableOpacity>\n      )}\n\n      <Modal visible={showPad} animationType=\"slide\">\n        <SafeAreaView style={styles.signatureModal}>\n          <View style={styles.signatureHeader}>\n            <Text style={styles.signatureTitle}>{label}</Text>\n            <TouchableOpacity onPress={() => setShowPad(false)}>\n              <Text style={styles.closeButton}>Fermer</Text>\n            </TouchableOpacity>\n          </View>\n          <Signature\n            onOK={handleSignature}\n            onEmpty={() => Alert.alert('Erreur', 'Veuillez signer avant de valider')}\n            descriptionText=\"Signez ci-dessous\"\n            clearText=\"Effacer\"\n            confirmText=\"Valider\"\n            webStyle={`.m-signature-pad { box-shadow: none; border: 1px solid #e8e8e8; }`}\n          />\n        </SafeAreaView>\n      </Modal>\n    </View>\n  );\n};"
+    }
+  },
+
+  "pdf_generation": {
+    "description": "Génération de PDF professionnels avec logo Novadis",
+    "library": "react-native-html-to-pdf",
+    "template_structure": {
+      "header": {
+        "logo": "Logo Novadis (base64 ou URL)",
+        "title": "COMPTE RENDU D'INTERVENTION",
+        "numero_cri": "Numéro du CRI",
+        "date_generation": "Date de génération"
+      },
+      "sections": [
+        "Informations générales",
+        "Informations client",
+        "Détails intervention (selon type)",
+        "Photos (si présentes)",
+        "Signatures"
+      ],
+      "footer": {
+        "page_number": "Page X/Y",
+        "company_info": "Novadis - contact@novadis.fr"
+      }
+    },
+    "example_code": "import RNHTMLtoPDF from 'react-native-html-to-pdf';\n\nconst generatePDF = async (criData, type) => {\n  const htmlContent = `\n    <!DOCTYPE html>\n    <html>\n    <head>\n      <meta charset=\"utf-8\">\n      <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .header { text-align: center; border-bottom: 3px solid #0066CC; padding-bottom: 20px; }\n        .logo { max-width: 200px; }\n        h1 { color: #0066CC; font-size: 24px; margin: 10px 0; }\n        .section { margin: 20px 0; }\n        .section-title { background-color: #0066CC; color: white; padding: 10px; font-size: 16px; font-weight: bold; }\n        .field { margin: 10px 0; }\n        .field-label { font-weight: bold; color: #333; }\n        .field-value { color: #666; margin-left: 10px; }\n        .signature-container { display: flex; justify-content: space-around; margin-top: 40px; }\n        .signature-box { text-align: center; }\n        .signature-image { max-width: 200px; border: 1px solid #ccc; padding: 10px; }\n        .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #999; }\n      </style>\n    </head>\n    <body>\n      <div class=\"header\">\n        <img src=\"data:image/png;base64,${NOVADIS_LOGO_BASE64}\" class=\"logo\" />\n        <h1>COMPTE RENDU D'INTERVENTION</h1>\n        <p><strong>N° ${criData.numero_cri}</strong></p>\n        <p>Généré le ${new Date().toLocaleDateString('fr-FR')}</p>\n      </div>\n\n      <div class=\"section\">\n        <div class=\"section-title\">INFORMATIONS GÉNÉRALES</div>\n        <div class=\"field\">\n          <span class=\"field-label\">Date d'intervention:</span>\n          <span class=\"field-value\">${criData.date_intervention}</span>\n        </div>\n        <div class=\"field\">\n          <span class=\"field-label\">Heure:</span>\n          <span class=\"field-value\">${criData.heure_debut} - ${criData.heure_fin}</span>\n        </div>\n      </div>\n\n      <div class=\"section\">\n        <div class=\"section-title\">CLIENT</div>\n        <div class=\"field\">\n          <span class=\"field-label\">Nom:</span>\n          <span class=\"field-value\">${criData.nom_client}</span>\n        </div>\n        <div class=\"field\">\n          <span class=\"field-label\">Site:</span>\n          <span class=\"field-value\">${criData.site}</span>\n        </div>\n        <div class=\"field\">\n          <span class=\"field-label\">Adresse:</span>\n          <span class=\"field-value\">${criData.adresse}</span>\n        </div>\n      </div>\n\n      ${type === 'projet' ? `\n        <div class=\"section\">\n          <div class=\"section-title\">PROJET</div>\n          <div class=\"field\">\n            <span class=\"field-label\">Nom du projet:</span>\n            <span class=\"field-value\">${criData.nom_projet}</span>\n          </div>\n          <div class=\"field\">\n            <span class=\"field-label\">Phase:</span>\n            <span class=\"field-value\">${criData.phase_projet}</span>\n          </div>\n        </div>\n      ` : ''}\n\n      ${type === 'service' ? `\n        <div class=\"section\">\n          <div class=\"section-title\">DEMANDE</div>\n          <div class=\"field\">\n            <span class=\"field-label\">Type:</span>\n            <span class=\"field-value\">${criData.type_demande}</span>\n          </div>\n          <div class=\"field\">\n            <span class=\"field-label\">Priorité:</span>\n            <span class=\"field-value\">${criData.priorite}</span>\n          </div>\n        </div>\n      ` : ''}\n\n      <div class=\"section\">\n        <div class=\"section-title\">INTERVENTION</div>\n        <div class=\"field\">\n          <span class=\"field-label\">Description:</span>\n          <div class=\"field-value\" style=\"white-space: pre-wrap;\">${criData.description_travaux || criData.actions_effectuees}</div>\n        </div>\n      </div>\n\n      <div class=\"signature-container\">\n        <div class=\"signature-box\">\n          <p><strong>Signature Technicien</strong></p>\n          ${criData.signature_technicien ? `<img src=\"${criData.signature_technicien}\" class=\"signature-image\" />` : ''}\n          <p>${criData.nom_technicien}</p>\n        </div>\n        ${criData.signature_client ? `\n          <div class=\"signature-box\">\n            <p><strong>Signature Client</strong></p>\n            <img src=\"${criData.signature_client}\" class=\"signature-image\" />\n          </div>\n        ` : ''}\n      </div>\n\n      <div class=\"footer\">\n        <p>Novadis - www.novadis.fr - contact@novadis.fr</p>\n      </div>\n    </body>\n    </html>\n  `;\n\n  const options = {\n    html: htmlContent,\n    fileName: `CRI_${criData.numero_cri}`,\n    directory: 'Documents',\n  };\n\n  const file = await RNHTMLtoPDF.convert(options);\n  return file.filePath;\n};"
+  },
+
+  "storage": {
+    "description": "Gestion du stockage local avec AsyncStorage",
+    "functions": {
+      "saveCRI": {
+        "description": "Sauvegarder un CRI",
+        "code": "export const saveCRI = async (criData) => {\n  try {\n    const criList = await getAllCRIs();\n    criList.push(criData);\n    await AsyncStorage.setItem('cri_list', JSON.stringify(criList));\n    return true;\n  } catch (error) {\n    console.error('Erreur sauvegarde CRI:', error);\n    return false;\n  }\n};"
+      },
+      "getAllCRIs": {
+        "description": "Récupérer tous les CRIs",
+        "code": "export const getAllCRIs = async () => {\n  try {\n    const data = await AsyncStorage.getItem('cri_list');\n    return data ? JSON.parse(data) : [];\n  } catch (error) {\n    console.error('Erreur récupération CRIs:', error);\n    return [];\n  }\n};"
+      },
+      "getCRIById": {
+        "description": "Récupérer un CRI par ID",
+        "code": "export const getCRIById = async (id) => {\n  try {\n    const criList = await getAllCRIs();\n    return criList.find(cri => cri.id === id);\n  } catch (error) {\n    console.error('Erreur récupération CRI:', error);\n    return null;\n  }\n};"
+      },
+      "deleteCRI": {
+        "description": "Supprimer un CRI",
+        "code": "export const deleteCRI = async (id) => {\n  try {\n    const criList = await getAllCRIs();\n    const newList = criList.filter(cri => cri.id !== id);\n    await AsyncStorage.setItem('cri_list', JSON.stringify(newList));\n    return true;\n  } catch (error) {\n    console.error('Erreur suppression CRI:', error);\n    return false;\n  }\n};"
+      },
+      "generateCRINumber": {
+        "description": "Générer un numéro de CRI unique",
+        "code": "export const generateCRINumber = async (type) => {\n  const prefix = type === 'projet' ? 'PROJ' : 'SERV';\n  const date = new Date();\n  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');\n  \n  const criList = await getAllCRIs();\n  const todayCRIs = criList.filter(cri => \n    cri.numero_cri.includes(dateStr)\n  );\n  \n  const sequence = String(todayCRIs.length + 1).padStart(3, '0');\n  return `CRI-${prefix}-${dateStr}-${sequence}`;\n};"
+      }
+    }
+  },
+
+  "navigation": {
+    "structure": "Stack Navigator",
+    "screens": {
+      "Home": {
+        "name": "Home",
+        "component": "HomeScreen",
+        "title": "Novadis CRI",
+        "description": "Écran d'accueil avec boutons pour créer un CRI Projet ou Service"
+      },
+      "CRIProjet": {
+        "name": "CRIProjet",
+        "component": "CRIProjetScreen",
+        "title": "CRI Projet",
+        "description": "Formulaire complet pour CRI Projet"
+      },
+      "CRIService": {
+        "name": "CRIService",
+        "component": "CRIServiceScreen",
+        "title": "CRI Service",
+        "description": "Formulaire complet pour CRI Service"
+      },
+      "History": {
+        "name": "History",
+        "component": "HistoryScreen",
+        "title": "Historique",
+        "description": "Liste des CRIs sauvegardés avec recherche et filtres"
+      }
+    },
+    "example_code": "import { NavigationContainer } from '@react-navigation/native';\nimport { createStackNavigator } from '@react-navigation/stack';\n\nconst Stack = createStackNavigator();\n\nfunction AppNavigator() {\n  return (\n    <NavigationContainer>\n      <Stack.Navigator\n        initialRouteName=\"Home\"\n        screenOptions={{\n          headerStyle: { backgroundColor: '#0066CC' },\n          headerTintColor: '#fff',\n          headerTitleStyle: { fontWeight: 'bold' },\n        }}\n      >\n        <Stack.Screen name=\"Home\" component={HomeScreen} options={{ title: 'Novadis CRI' }} />\n        <Stack.Screen name=\"CRIProjet\" component={CRIProjetScreen} options={{ title: 'CRI Projet' }} />\n        <Stack.Screen name=\"CRIService\" component={CRIServiceScreen} options={{ title: 'CRI Service' }} />\n        <Stack.Screen name=\"History\" component={HistoryScreen} options={{ title: 'Historique' }} />\n      </Stack.Navigator>\n    </NavigationContainer>\n  );\n}"
+  },
+
+  "development_steps": {
+    "phase_1_setup": {
+      "title": "Configuration initiale du projet",
+      "tasks": [
+        "Créer le projet avec: npx create-expo-app novadis-cri",
+        "Installer les dépendances: npm install @react-navigation/native @react-navigation/stack react-native-screens react-native-safe-area-context @react-native-async-storage/async-storage react-native-html-to-pdf react-native-signature-canvas expo-image-picker @react-native-picker/picker",
+        "Créer la structure de dossiers (src/screens, src/components, src/utils, etc.)",
+        "Configurer les constantes (couleurs, styles globaux)"
+      ]
+    },
+    "phase_2_components": {
+      "title": "Développement des composants réutilisables",
+      "tasks": [
+        "Créer FormInput.js",
+        "Créer FormSelect.js",
+        "Créer FormTextArea.js",
+        "Créer PhotoPicker.js",
+        "Créer SignaturePad.js",
+        "Tester chaque composant individuellement"
+      ]
+    },
+    "phase_3_screens": {
+      "title": "Développement des écrans",
+      "tasks": [
+        "Développer HomeScreen (2 boutons + accès historique)",
+        "Développer CRIProjetScreen avec toutes les sections",
+        "Développer CRIServiceScreen avec toutes les sections",
+        "Développer HistoryScreen avec liste et recherche",
+        "Implémenter la navigation entre écrans"
+      ]
+    },
+    "phase_4_logic": {
+      "title": "Logique métier et stockage",
+      "tasks": [
+        "Implémenter les fonctions de storage (saveCRI, getAllCRIs, etc.)",
+        "Créer le générateur de numéros CRI",
+        "Implémenter la validation des formulaires",
+        "Gérer l'auto-calcul du temps d'intervention",
+        "Tester le stockage local"
+      ]
+    },
+    "phase_5_pdf": {
+      "title": "Génération PDF",
+      "tasks": [
+        "Créer le template HTML pour CRI Projet",
+        "Créer le template HTML pour CRI Service",
+        "Intégrer le logo Novadis",
+        "Implémenter la fonction generatePDF",
+        "Gérer l'inclusion des photos dans le PDF",
+        "Tester la génération et l'ouverture des PDF"
+      ]
+    },
+    "phase_6_polish": {
+      "title": "Finitions et tests",
+      "tasks": [
+        "Améliorer le design et l'UX",
+        "Ajouter des messages de confirmation/erreur",
+        "Gérer les cas limites (perte de connexion, erreurs)",
+        "Tests complets sur iOS et Android",
+        "Optimiser les performances",
+        "Documenter le code"
+      ]
+    }
+  },
+
+  "testing_scenarios": {
+    "scenario_1": {
+      "title": "Création d'un CRI Projet complet",
+      "steps": [
+        "Ouvrir l'application",
+        "Cliquer sur 'Nouveau CRI Projet'",
+        "Remplir tous les champs obligatoires",
+        "Ajouter 2 photos",
+        "Signer (technicien)",
+        "Demander signature client",
+        "Enregistrer le CRI",
+        "Vérifier la génération du PDF",
+        "Vérifier que le CRI apparaît dans l'historique"
+      ],
+      "expected_result": "CRI créé avec succès, PDF généré et disponible"
+    },
+    "scenario_2": {
+      "title": "Création d'un CRI Service avec champs minimum",
+      "steps": [
+        "Cliquer sur 'Nouveau CRI Service'",
+        "Remplir uniquement les champs obligatoires",
+        "Signer (technicien uniquement)",
+        "Enregistrer",
+        "Vérifier le PDF"
+      ],
+      "expected_result": "CRI Service créé avec les champs minimum requis"
+    },
+    "scenario_3": {
+      "title": "Validation des erreurs",
+      "steps": [
+        "Créer un nouveau CRI",
+        "Laisser des champs obligatoires vides",
+        "Tenter d'enregistrer",
+        "Vérifier les messages d'erreur"
+      ],
+      "expected_result": "Messages d'erreur affichés, enregistrement bloqué"
+    },
+    "scenario_4": {
+      "title": "Historique et recherche",
+      "steps": [
+        "Créer 5 CRI (3 Projet, 2 Service)",
+        "Accéder à l'historique",
+        "Rechercher par nom client",
+        "Filtrer par type",
+        "Ouvrir un CRI existant",
+        "Supprimer un CRI"
+      ],
+      "expected_result": "Toutes les fonctionnalités d'historique fonctionnent"
+    },
+    "scenario_5": {
+      "title": "Test hors ligne",
+      "steps": [
+        "Désactiver le réseau",
+        "Créer un nouveau CRI",
+        "Enregistrer",
+        "Vérifier que les données sont sauvegardées localement"
+      ],
+      "expected_result": "Application fonctionne complètement hors ligne"
+    }
+  },
+
+  "validation_checklist": {
+    "functional": [
+      "✓ Les 2 types de CRI (Projet/Service) sont créables",
+      "✓ Tous les champs requis sont bien validés",
+      "✓ La génération de numéro CRI est unique",
+      "✓ Le calcul automatique du temps d'intervention fonctionne",
+      "✓ Les photos peuvent être ajoutées (max 5)",
+      "✓ Les signatures technicien et client sont capturables",
+      "✓ Les PDF sont générés correctement avec le bon format",
+      "✓ L'historique affiche tous les CRIs sauvegardés",
+      "✓ La recherche et les filtres fonctionnent",
+      "✓ Un CRI peut être supprimé",
+      "✓ L'application fonctionne hors ligne",
+      "✓ Les données persistent après fermeture de l'app"
+    ],
+    "technical": [
+      "✓ Pas de crash sur iOS",
+      "✓ Pas de crash sur Android",
+      "✓ Les performances sont fluides",
+      "✓ Pas de fuite mémoire",
+      "✓ Le code est propre et commenté",
+      "✓ Les composants sont réutilisables",
+      "✓ La navigation fonctionne correctement",
+      "✓ Les messages d'erreur sont clairs",
+      "✓ Le design respecte la charte Novadis"
+    ],
+    "ux": [
+      "✓ L'interface est intuitive",
+      "✓ Les formulaires sont faciles à remplir",
+      "✓ Les retours utilisateur sont immédiats",
+      "✓ Le parcours utilisateur est fluide",
+      "✓ Les PDF générés sont professionnels",
+      "✓ L'application est utilisable sur le terrain"
+    ]
+  },
+
+  "best_practices": {
+    "code_quality": [
+      "Utiliser des composants fonctionnels avec hooks",
+      "Implémenter PropTypes ou TypeScript pour la validation",
+      "Commenter les fonctions complexes",
+      "Utiliser des noms de variables explicites",
+      "Séparer la logique métier des composants UI",
+      "Créer des composants réutilisables et modulaires"
+    ],
+    "performance": [
+      "Utiliser React.memo pour les composants lourds",
+      "Éviter les re-renders inutiles",
+      "Optimiser les images (compression)",
+      "Utiliser FlatList pour les grandes listes",
+      "Nettoyer les event listeners dans useEffect"
+    ],
+    "security": [
+      "Valider toutes les entrées utilisateur",
+      "Ne pas stocker de données sensibles en clair",
+      "Gérer correctement les permissions (caméra, galerie)",
+      "Protéger contre les injections dans les PDF"
+    ],
+    "ux": [
+      "Afficher des loaders pendant les opérations longues",
+      "Donner du feedback immédiat sur les actions",
+      "Utiliser des animations subtiles",
+      "Gérer les états d'erreur de manière claire",
+      "Permettre l'annulation des actions importantes"
+    ]
+  },
+
+  "future_enhancements": {
+    "v2_features": [
+      "Synchronisation cloud (Firebase/AWS)",
+      "Mode multi-utilisateurs avec authentification",
+      "Export CSV des CRIs",
+      "Statistiques et tableaux de bord",
+      "Notifications push pour les suivis",
+      "Mode scan QR Code pour identification rapide",
+      "Templates de CRI personnalisables",
+      "Intégration calendrier pour planification",
+      "Pièces jointes supplémentaires (documents PDF)",
+      "Version web responsive",
+      "API REST pour intégration avec autres systèmes"
+    ]
+  },
+
+  "deployment": {
+    "build_android": {
+      "command": "eas build --platform android",
+      "prerequisites": [
+        "Compte Expo",
+        "Configuration eas.json",
+        "Certificats Android"
+      ]
+    },
+    "build_ios": {
+      "command": "eas build --platform ios",
+      "prerequisites": [
+        "Compte Apple Developer",
+        "Configuration eas.json",
+        "Certificats iOS"
+      ]
+    },
+    "distribution": [
+      "Google Play Store (Android)",
+      "Apple App Store (iOS)",
+      "Distribution interne via TestFlight/Firebase App Distribution"
+    ]
+  },
+
+  "support_contacts": {
+    "technical": "dev@novadis.fr",
+    "product_owner": "projet@novadis.fr",
+    "documentation": "https://docs.novadis.fr/cri-app"
+  },
+
+  "glossary": {
+    "CRI": "Compte Rendu d'Intervention - Document officiel résumant une intervention technique",
+    "MVP": "Minimum Viable Product - Première version fonctionnelle de l'application",
+    "AsyncStorage": "Système de stockage local clé-valeur pour React Native",
+    "Base64": "Encodage permettant de représenter des données binaires (images) en texte",
+    "Hooks": "Fonctions React permettant d'utiliser l'état et d'autres fonctionnalités (useState, useEffect...)",
+    "Stack Navigator": "Type de navigation par empilement d'écrans",
+    "Expo": "Framework facilitant le développement React Native"
+  },
+
+  "instructions_for_ai_agent": {
+    "priority": "HIGH",
+    "objective": "Développer un MVP fonctionnel de l'application Novadis CRI en suivant exactement ces spécifications",
+    "approach": [
+      "1. Lire attentivement TOUTES les spécifications",
+      "2. Commencer par la configuration du projet (phase_1_setup)",
+      "3. Développer les composants réutilisables en premier (phase_2_components)",
+      "4. Implémenter les écrans un par un (phase_3_screens)",
+      "5. Ajouter la logique métier et le stockage (phase_4_logic)",
+      "6. Implémenter la génération PDF (phase_5_pdf)",
+      "7. Finaliser et tester (phase_6_polish)"
+    ],
+    "code_style": {
+      "language": "JavaScript (ES6+)",
+      "framework": "React Native avec Expo",
+      "formatting": "Indentation 2 espaces, point-virgules obligatoires",
+      "naming": "camelCase pour variables/fonctions, PascalCase pour composants",
+      "comments": "Commenter les fonctions complexes et la logique métier"
+    },
+    "deliverables": [
+      "Code source complet et organisé selon project_structure",
+      "Fichier package.json avec toutes les dépendances",
+      "README.md avec instructions d'installation et de lancement",
+      "Exemples de données pour tester l'application",
+      "Notes sur les décisions techniques prises"
+    ],
+    "constraints": [
+      "RESPECTER STRICTEMENT la structure des données (data_models)",
+      "IMPLÉMENTER TOUS les champs requis pour chaque type de CRI",
+      "UTILISER UNIQUEMENT les technologies spécifiées dans technical_stack",
+      "ASSURER le fonctionnement hors ligne complet",
+      "GÉNÉRER des PDF professionnels avec le logo Novadis",
+      "VALIDER tous les formulaires selon validation_rules"
+    ],
+    "success_criteria": [
+      "L'application se lance sans erreur",
+      "Les 2 types de CRI peuvent être créés complètement",
+      "Les PDF sont générés correctement",
+      "Le stockage local fonctionne",
+      "L'historique affiche les CRIs sauvegardés",
+      "Toutes les validations sont en place",
+      "Le code est propre et maintenable"
+    ],
+    "notes": [
+      "Privilégier la simplicité et la robustesse pour ce MVP",
+      "Gérer proprement les erreurs avec try/catch et messages clairs",
+      "Tester chaque fonctionnalité avant de passer à la suivante",
+      "Si une technologie pose problème, proposer une alternative équivalente",
+      "Documenter toute déviation par rapport aux spécifications"
+    ]
+  }
+}

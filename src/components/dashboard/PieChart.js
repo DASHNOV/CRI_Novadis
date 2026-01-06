@@ -6,7 +6,9 @@ import { calculateChartDimensions } from '../../utils/chartHelpers';
 const PieChart = ({ data, title }) => {
     const { width } = calculateChartDimensions(32);
 
-    if (!data || data.length === 0) return null;
+    const hasData = data && data.length > 0 && data.some(item => item.value > 0 || item.population > 0);
+
+    if (!hasData) return null;
 
     return (
         <View style={styles.container}>

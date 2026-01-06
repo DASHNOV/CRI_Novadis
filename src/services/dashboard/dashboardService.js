@@ -9,6 +9,7 @@ export const dashboardService = {
      * @param {Date} dateTo 
      */
     async fetchGlobalStats(dateFrom = null, dateTo = null) {
+        console.log('🔄 [dashboardService] Fetching global stats...');
         try {
             // We can use get_stats_by_site to aggregate global data
             // This avoids fetching all rows or creating a new RPC
@@ -18,7 +19,12 @@ export const dashboardService = {
                     date_to: dateTo
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ [dashboardService] Error fetching site stats for global calc:', error);
+                throw error;
+            }
+
+            console.log(`✅ [dashboardService] Raw site stats received: ${siteStats?.length || 0} records`);
 
             if (!siteStats || siteStats.length === 0) {
                 return {
@@ -35,21 +41,30 @@ export const dashboardService = {
             const activeSites = siteStats.filter(s => parseInt(s.total_interventions) > 0).length;
 
             // Calculate weighted average duration
-            const totalDurationMinutes = siteStats.reduce((sum, site) => sum + (parseFloat(site.avg_duration || 0) * parseInt(site.total_interventions)), 0);
+            const totalDurationMinutes = siteStats.reduce((sum, site) => {
+                const duration = parseFloat(site.avg_duration || 0);
+                // Ignore negative durations (bad data)
+                const validDuration = Math.max(0, duration);
+                return sum + (validDuration * parseInt(site.total_interventions));
+            }, 0);
             const avgDuration = totalInterventions > 0 ? totalDurationMinutes / totalInterventions : 0;
 
             const completedCount = siteStats.reduce((sum, site) => sum + parseInt(site.completed_count), 0);
             const completionRate = totalInterventions > 0 ? Math.round((completedCount / totalInterventions) * 100) : 0;
 
-            return {
+            const result = {
                 totalInterventions,
                 activeSites,
                 avgDuration: Math.round(avgDuration), // Keep in minutes for display formatting
                 completionRate,
                 completedCount
             };
+
+            console.log('✅ [dashboardService] Global stats calculated:', result);
+            return result;
+
         } catch (error) {
-            console.error('Error fetching global stats:', error);
+            console.error('❌ [dashboardService] Exception in fetchGlobalStats:', error);
             return null;
         }
     },
@@ -61,6 +76,7 @@ export const dashboardService = {
      * @param {number} limit 
      */
     async fetchTopSites(dateFrom = null, dateTo = null, limit = 5) {
+        console.log(`🔄 [dashboardService] Fetching top ${limit} sites...`);
         try {
             const { data, error } = await supabase
                 .rpc('get_stats_by_site', {
@@ -68,12 +84,17 @@ export const dashboardService = {
                     date_to: dateTo
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ [dashboardService] Error fetching top sites:', error);
+                throw error;
+            }
 
             // Sort and limit in JS since RPC sorts by total descending already
-            return data.slice(0, limit);
+            const result = data.slice(0, limit);
+            console.log(`✅ [dashboardService] Top sites fetched: ${result.length}`);
+            return result;
         } catch (error) {
-            console.error('Error fetching top sites:', error);
+            console.error('❌ [dashboardService] Exception in fetchTopSites:', error);
             return [];
         }
     },
@@ -84,6 +105,7 @@ export const dashboardService = {
      * @param {Date} dateTo 
      */
     async fetchTypeStats(dateFrom = null, dateTo = null) {
+        console.log('🔄 [dashboardService] Fetching type stats...');
         try {
             const { data, error } = await supabase
                 .rpc('get_stats_by_type', {
@@ -91,10 +113,15 @@ export const dashboardService = {
                     date_to: dateTo
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ [dashboardService] Error fetching type stats:', error);
+                throw error;
+            }
+
+            console.log(`✅ [dashboardService] Type stats fetched: ${data?.length || 0} types`);
             return data;
         } catch (error) {
-            console.error('Error fetching type stats:', error);
+            console.error('❌ [dashboardService] Exception in fetchTypeStats:', error);
             return [];
         }
     },
@@ -104,16 +131,22 @@ export const dashboardService = {
      * @param {number} months Number of months to look back
      */
     async fetchMonthlyData(months = 6) {
+        console.log(`🔄 [dashboardService] Fetching monthly data for last ${months} months...`);
         try {
             const { data, error } = await supabase
                 .rpc('get_monthly_interventions', { months });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ [dashboardService] Error fetching monthly data:', error);
+                throw error;
+            }
 
             // Transform for chart usage (ensure chronological order)
-            return data.reverse();
+            const result = data.reverse();
+            console.log(`✅ [dashboardService] Monthly data fetched: ${result.length} months`);
+            return result;
         } catch (error) {
-            console.error('Error fetching monthly data:', error);
+            console.error('❌ [dashboardService] Exception in fetchMonthlyData:', error);
             return [];
         }
     },
@@ -123,6 +156,7 @@ export const dashboardService = {
      * @param {string} siteId 
      */
     async fetchSiteDetails(siteId) {
+        console.log(`🔄 [dashboardService] Fetching details for site ${siteId}...`);
         try {
             // 1. Get site info
             const { data: siteData, error: siteError } = await supabase
@@ -149,10 +183,12 @@ export const dashboardService = {
             // But for "details" screen showing recent activity, this might be fine or we fetch count separately.
 
             // Let's get the accurate count
-            const { count: totalCount } = await supabase
+            const { count: totalCount, error: countError } = await supabase
                 .from('interventions')
                 .select('*', { count: 'exact', head: true })
                 .eq('site_id', siteId);
+
+            if (countError) console.warn('⚠️ [dashboardService] Error fetching total count:', countError);
 
             // Calculate type distribution for this site
             const types = {};
@@ -167,7 +203,7 @@ export const dashboardService = {
                 legendFontSize: 12
             }));
 
-            return {
+            const result = {
                 site: siteData,
                 recentInterventions: interventions,
                 stats: {
@@ -176,8 +212,11 @@ export const dashboardService = {
                 }
             };
 
+            console.log('✅ [dashboardService] Site details fetched successfully');
+            return result;
+
         } catch (error) {
-            console.error('Error fetching site details:', error);
+            console.error('❌ [dashboardService] Exception in fetchSiteDetails:', error);
             return null;
         }
     }

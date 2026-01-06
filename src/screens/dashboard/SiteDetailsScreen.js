@@ -100,7 +100,9 @@ const SiteDetailsScreen = ({ route, navigation }) => {
                     >
                         <View style={styles.interventionHeader}>
                             <Text style={styles.interventionDate}>
-                                {format(new Date(intervention.start_date), 'dd MMM yyyy', { locale: fr })}
+                                {intervention.start_date && !isNaN(new Date(intervention.start_date).getTime())
+                                    ? format(new Date(intervention.start_date), 'dd MMM yyyy', { locale: fr })
+                                    : 'Date inconnue'}
                             </Text>
                             <View style={[
                                 styles.statusBadge,

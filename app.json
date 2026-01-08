@@ -12,7 +12,7 @@
             "supportsTablet": true
         },
         "web": {
-            "favicon": "./public/favicon.ico",
+            "favicon": "./public/icon-192.png",
             "bundler": "metro",
             "name": "NOVADIS CRI",
             "shortName": "NOVADIS",
